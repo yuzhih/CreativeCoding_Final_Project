@@ -1,17 +1,20 @@
-ArrayList<Board> board;
-boolean colliding;
-PVector pos;
-PVector vel;
-float moving = 0;
-float walk = 2;
+//Code inspired by Arthur Facredyn
+//https://www.youtube.com/watch?v=QJGcxeF3YBs
+
+ArrayList<Board> board; //array for floating boards in the game (as in "platforms" in the video)
+boolean colliding; //corresponds to collide
+PVector pos; //position of the ball/main character
+PVector vel; //velocity of the ball
+float moving = 0; //horizontal displacement of the ball
+float r = 7.5; //radius of the ball
 
 void setup() {
 
   size(500, 500);
-  board = new ArrayList<Board>();
+  board = new ArrayList<Board>(); //delare the ArrayList for the board class
   for (int i = 0; i < height; i++) {
     board.add(new Board(i * random(10, 100), random(height)));
-  }
+  } //add boards(objects) to the ArrayList to generate boards at random positions
   pos = new PVector(width/2, 450);
   vel = new PVector();
 }
@@ -19,31 +22,23 @@ void setup() {
 void draw() {
 
   background(0);
-  colliding = false;
-  for (Board i : board) {
-    i.show();
-    if (i.collide(pos)) {
-      colliding = true;
-      pos.y = i.bpos.y;
+  colliding = false; //initiate the game as the ball not colliding on any board
+  for (Board i : board) { // for(datatype/class in this case : variable name/defines the array)
+    i.show(); //show the visuals of the boards
+    if (i.collide(pos)) { //collide (board) = colliding (ball)
+      colliding = true; 
+      pos.y = i.bpos.y; //synchronizes positions for both ball and boards
     }
   }
-  if (pos.y < 0) {
-    setup();
-  }
-  if (pos.y > height) {
-    gameover();
-  }  
-  if (pos.x > width) {
-    pos.x = width - 7.5;
-  }
 
+  control();
   ball();
 
-  if (!colliding) {
-    vel.y += 0.4;
+  if (!colliding) { //when the ball 
+    vel.y += 0.5;
   }
   pos.add(vel);
-  pos.x += moving;
+  pos.x += moving; //horizontal position of the ball updates by keep adding the displacement
   vel.mult(0.8);
 
   if (pos.y >= 470) {
@@ -51,37 +46,58 @@ void draw() {
   }
 }
 
-void ball() {
+void ball() { //visual of the main character
   fill(255);
   noStroke();
-  ellipse(pos.x, pos.y - 7.5, 15, 15);
+  ellipse(pos.x, pos.y - r, 15, 15);
 }
 
-void keyPressed() {
+void keyPressed(){
   if (keyCode == LEFT) {
-    moving = -walk;
+      moving = -3; //ball moves to the left by 3 unites every time the left key is pressed
+    }
+    if (keyCode == RIGHT) {
+      moving = 3; //ball moves to the right by 3 unites every time the right key is pressed
+    }
+    if (keyCode == UP) { //allows the ball to jump
+      vel.y -= 8;       //using velocity creates more dynamic than simple addition/subtraction 
+                        //of position/displacement, I wonder if acceleration is necessary here
+                        //I could add gravity and outside forces into this game
+      if (vel.y <= -20) { //limit how high the ball can jump if the player keeps pressing on the up key
+        vel.y = 10;  //I haven't found a way to ACTUALLY to limit the height
+      }            //for now it is only more difficult for the player to keep pressing
+    }
+    if (key == ' ') {
+      setup(); //restart the game whenever the space key is pressed
+    }          //the code is the same when pos.y < 0, I probably need to think of a
+               //way to distinguish the meaning (restart and switch platforms)
+  } 
+
+void keyReleased() { //stops the ball from colliding forever when it is on a board
+  if (keyCode == LEFT) { //only for horizontal motions(left and right)
+    moving = 0;          //because they are the only motions when colliding = true
   }
   if (keyCode == RIGHT) {
-    moving = walk;
-  }
-  if (keyCode == UP) {
-    vel.y -= 5;
-  }
-
-  if (key == ' ') {
-    setup();
-  }
-}
-void keyReleased() {
-  if (keyCode == LEFT) {
     moving = 0;
+  }  //I find it easier to organize all the keypress/release into a "control" function
+}    //it's frustrating that only keyReleased doesn't have a boolean variable form
+
+void control() { //conditionals(ifs) for checking the edges of the window 
+  if (pos.y < 0) {
+    setup(); //switch to a new scene/reinitiate the scene when the ball reaches to the top
   }
-  if (keyCode == RIGHT) {
-    moving = 0;
+  if (pos.y > height + 80) { //the + 80 here means to give the player a couple
+    gameover();      //of seconds to realize they have to jump before they simply "die"
+  }    
+  if (pos.x > width) {
+    pos.x = width - r;
+  }else if (pos.x < 0){
+    pos.x = r;
   }
+    
 }
 
-void gameover() {
+void gameover() { //display screen when the ball fall off(?) the window
   textSize(15);
   fill(0);
   rect(0, 0, width, height);
